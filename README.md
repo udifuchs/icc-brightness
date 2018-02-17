@@ -1,6 +1,6 @@
 # ICC Brightness
 
-###Control OLED display brightness by applying ICC color profiles.
+### Control OLED display brightness by applying ICC color profiles.
 
 
 ## Introduction
