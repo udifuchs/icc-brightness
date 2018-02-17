@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=ICC Brightness
+Comment=Control OLED display brightness by applying ICC color profiles.
+Exec=icc-brightness watch
+Terminal=false
+X-GNOME-Autostart-enabled=true

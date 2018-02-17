@@ -1,0 +1,124 @@
+#! /usr/bin/env python3
+"""Control OLED display brightness by applying ICC color profiles.
+
+icc-brightness brightness max-brightness - set brightness manually
+icc-brightness apply - apply brightness from system setting
+icc-brightness watch - continuously update to system setting
+"""
+
+import sys
+import os
+import subprocess
+import time
+import fcntl
+import signal
+import threading
+import logging
+
+# Device ID can be found using 'colormgr get-devices'
+DEVICE_ID = "xrandr-Lenovo Group Limited"
+
+TEMP_FOLDER = '/tmp'
+BACKLIGHT_PATH = '/sys/class/backlight/intel_backlight'
+BRIGHTNESS_PATH = os.path.join(BACKLIGHT_PATH, 'brightness')
+MAX_BRIGHTNESS_PATH = os.path.join(BACKLIGHT_PATH, 'max_brightness')
+
+CWD = os.path.dirname(__file__)
+ICC_BRIGHTNESS_GEN = os.path.join(CWD, 'icc-brightness-gen')
+
+LOCK = threading.Lock()
+
+
+def find_profile(filename):
+    try:
+        out = subprocess.check_output(
+                ['colormgr', 'find-profile-by-filename', filename])
+    except subprocess.CalledProcessError:
+        return None
+
+    object_path = None
+    for line in out.decode('utf8').split('\n'):
+        if line.startswith('Object Path:'):
+            object_path = line.split(':')[1].lstrip()
+            break
+    return object_path
+
+
+last_icc_filename = None
+
+def icc_brightness(brightness, max_brightness):
+
+    icc_filename = 'brightness_%d_%d.icc' % (brightness, max_brightness)
+    logging.debug('Apply profile %s', icc_filename)
+    object_path = find_profile(icc_filename)
+    if object_path is None:
+        icc_filepath = os.path.join(TEMP_FOLDER, icc_filename)
+        subprocess.run([ICC_BRIGHTNESS_GEN, icc_filepath,
+                        str(brightness), str(max_brightness)], check=True)
+        subprocess.check_output(['colormgr', 'import-profile', icc_filepath])
+        object_path = find_profile(icc_filename)
+        subprocess.run(['colormgr', 'device-add-profile',
+                        DEVICE_ID, object_path], check=True)
+
+    subprocess.run(['colormgr', 'device-make-profile-default',
+                    DEVICE_ID, object_path], check=True)
+
+    global last_icc_filename
+    if last_icc_filename is not None and last_icc_filename != icc_filename:
+        object_path = find_profile(last_icc_filename)
+        subprocess.run(['colormgr', 'delete-profile', object_path], check=True)
+    last_icc_filename = icc_filename
+
+
+def icc_brightness_apply():
+    with open(BRIGHTNESS_PATH) as infile:
+        brightness = int(infile.readline())
+    with open(MAX_BRIGHTNESS_PATH) as infile:
+        max_brightness = int(infile.readline())
+    icc_brightness(brightness, max_brightness)
+
+
+def handler(signum, frame):
+    if LOCK.acquire(blocking=False):
+        try:
+            icc_brightness_apply()
+        except subprocess.CalledProcessError as ex:
+            logging.exception('Error during call to icc_brightness')
+            logging.error(ex.stdout)
+        except BaseException:
+            logging.exception('Error during call to icc_brightness')
+        finally:
+            LOCK.release()
+
+
+def main():
+    logging.basicConfig(level=logging.INFO,
+                        format='%(levelname)s: %(message)s')
+
+    if len(sys.argv) == 2 and sys.argv[1] == 'apply':
+        icc_brightness_apply()
+
+    elif len(sys.argv) == 2 and sys.argv[1] == 'watch':
+        try:
+            icc_brightness_apply()
+        except BaseException:
+            logging.exception('device-make-profile-default')
+        signal.signal(signal.SIGIO, handler)
+        fd = os.open(BACKLIGHT_PATH, os.O_RDONLY)
+        fcntl.fcntl(fd, fcntl.F_SETSIG, 0)
+        fcntl.fcntl(fd, fcntl.F_NOTIFY, fcntl.DN_MODIFY| fcntl.DN_MULTISHOT)
+
+        while True:
+            time.sleep(1000000)
+
+    elif len(sys.argv) == 3:
+        brightness = int(sys.argv[1])
+        max_brightness = int(sys.argv[2])
+        icc_brightness(brightness, max_brightness)
+
+    else:
+        print(__doc__)
+
+
+if __name__ == '__main__':
+    main()
