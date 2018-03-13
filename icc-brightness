@@ -15,9 +15,6 @@ import signal
 import threading
 import logging
 
-# Device ID can be found using 'colormgr get-devices'
-DEVICE_ID = "xrandr-Lenovo Group Limited"
-
 TEMP_FOLDER = '/tmp'
 BACKLIGHT_PATH = '/sys/class/backlight/intel_backlight'
 BRIGHTNESS_PATH = os.path.join(BACKLIGHT_PATH, 'brightness')
@@ -29,19 +26,28 @@ ICC_BRIGHTNESS_GEN = os.path.join(CWD, 'icc-brightness-gen')
 LOCK = threading.Lock()
 
 
-def find_profile(filename):
-    try:
-        out = subprocess.check_output(
-                ['colormgr', 'find-profile-by-filename', filename])
-    except subprocess.CalledProcessError:
-        return None
-
+def get_object_path(out):
     object_path = None
     for line in out.decode('utf8').split('\n'):
         if line.startswith('Object Path:'):
             object_path = line.split(':')[1].lstrip()
             break
     return object_path
+
+
+def find_profile(filename):
+    try:
+        out = subprocess.check_output(
+                ['colormgr', 'find-profile-by-filename', filename])
+    except subprocess.CalledProcessError:
+        return None
+    return get_object_path(out)
+
+
+def get_device_id():
+    out = subprocess.check_output(['colormgr', 'get-devices-by-kind',
+                                   'display'])
+    return get_object_path(out)
 
 
 last_icc_filename = None
@@ -57,11 +63,14 @@ def icc_brightness(brightness, max_brightness):
                         str(brightness), str(max_brightness)], check=True)
         subprocess.check_output(['colormgr', 'import-profile', icc_filepath])
         object_path = find_profile(icc_filename)
-        subprocess.run(['colormgr', 'device-add-profile',
-                        DEVICE_ID, object_path], check=True)
+        try:
+            subprocess.run(['colormgr', 'device-add-profile',
+                            get_device_id(), object_path], check=True)
+        except subprocess.CalledProcessError as ex:
+            logging.warning('Failed to add profile: %s', ex.stdout)
 
     subprocess.run(['colormgr', 'device-make-profile-default',
-                    DEVICE_ID, object_path], check=True)
+                    get_device_id(), object_path], check=True)
 
     global last_icc_filename
     if last_icc_filename is not None and last_icc_filename != icc_filename:
