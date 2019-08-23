@@ -10,7 +10,7 @@ clean:
 
 install: all
 	mkdir -p $(DESTDIR)$(BIN_PATH)
-	cp icc-brightness-gen $(DESTDIR)$(BIN_PATH)
-	cp icc-brightness $(DESTDIR)$(BIN_PATH)
+	install -m 755 icc-brightness-gen $(DESTDIR)$(BIN_PATH)
+	install -m 755 icc-brightness $(DESTDIR)$(BIN_PATH)
 	mkdir -p $(DESTDIR)$(AUTO_START_PATH)
-	cp icc-brightness.desktop $(DESTDIR)$(AUTO_START_PATH)
+	install -m 644 icc-brightness.desktop $(DESTDIR)$(AUTO_START_PATH)
