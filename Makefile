@@ -3,7 +3,7 @@ AUTO_START_PATH=/usr/share/gnome/autostart/
 all: icc-brightness-gen
 
 icc-brightness-gen: icc-brightness-gen.c
-	$(CC) -W -Wall icc-brightness-gen.c -l lcms2 -o $@
+	$(CC) -W -Wall $(CFLAGS) $^ -l lcms2 $(LDFLAGS) -o $@
 
 clean:
 	rm -f icc-brightness-gen
