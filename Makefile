@@ -8,7 +8,7 @@ icc-brightness-gen: icc-brightness-gen.c
 clean:
 	rm -f icc-brightness-gen
 
-install:
+install: all
 	mkdir -p $(DESTDIR)$(BIN_PATH)
 	cp icc-brightness-gen $(DESTDIR)$(BIN_PATH)
 	cp icc-brightness $(DESTDIR)$(BIN_PATH)
