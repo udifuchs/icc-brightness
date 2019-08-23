@@ -9,6 +9,8 @@ clean:
 	rm -f icc-brightness-gen
 
 install:
+	mkdir -p $(DESTDIR)$(BIN_PATH)
 	cp icc-brightness-gen $(DESTDIR)$(BIN_PATH)
 	cp icc-brightness $(DESTDIR)$(BIN_PATH)
+	mkdir -p $(DESTDIR)$(AUTO_START_PATH)
 	cp icc-brightness.desktop $(DESTDIR)$(AUTO_START_PATH)
