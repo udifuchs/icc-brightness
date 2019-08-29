@@ -6,7 +6,7 @@ LDFLAGS := -l lcms2 ${LDFLAGS}
 
 PREFIX ?= /usr/local
 BINDIR ?= ${PREFIX}/bin
-AUTO_START_PATH=/usr/share/gnome/autostart/
+AUTO_START_DIR=/etc/xdg/autostart
 
 all: icc-brightness-gen
 
