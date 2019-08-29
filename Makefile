@@ -1,13 +1,15 @@
 # Copyright 2017 - 2019, Udi Fuchs
 # SPDX-License-Identifier: MIT
 
+CFLAGS := -Wall ${CFLAGS}
+LDFLAGS := -l lcms2 ${LDFLAGS}
+
 BIN_PATH=/usr/local/bin/
 AUTO_START_PATH=/usr/share/gnome/autostart/
 
 all: icc-brightness-gen
 
 icc-brightness-gen: icc-brightness-gen.c
-	$(CC) -W -Wall $(CFLAGS) $^ -l lcms2 $(LDFLAGS) -o $@
 
 clean:
 	rm -f icc-brightness-gen
