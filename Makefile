@@ -1,5 +1,9 @@
+# Copyright 2017 - 2019, Udi Fuchs
+# SPDX-License-Identifier: MIT
+
 BIN_PATH=/usr/local/bin/
 AUTO_START_PATH=/usr/share/gnome/autostart/
+
 all: icc-brightness-gen
 
 icc-brightness-gen: icc-brightness-gen.c
