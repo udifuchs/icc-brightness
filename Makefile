@@ -16,8 +16,5 @@ clean:
 	rm -f icc-brightness-gen
 
 install: all
-	mkdir -p $(DESTDIR)$(BINDIR)
-	install -m 755 icc-brightness-gen $(DESTDIR)$(BINDIR)
-	install -m 755 icc-brightness $(DESTDIR)$(BINDIR)
-	mkdir -p $(DESTDIR)$(AUTO_START_PATH)
-	install -m 644 icc-brightness.desktop $(DESTDIR)$(AUTO_START_PATH)
+	install -Dm755 -t $(DESTDIR)$(BINDIR) icc-brightness icc-brightness-gen
+	install -Dm644 -t $(DESTDIR)$(AUTO_START_DIR) icc-brightness.desktop
