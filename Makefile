@@ -3,12 +3,14 @@ AUTO_START_PATH=/usr/share/gnome/autostart/
 all: icc-brightness-gen
 
 icc-brightness-gen: icc-brightness-gen.c
-	gcc -W -Wall icc-brightness-gen.c -l lcms2 -o $@
+	$(CC) -W -Wall $(CFLAGS) $^ -l lcms2 $(LDFLAGS) -o $@
 
 clean:
-	rm icc-brightness-gen
+	rm -f icc-brightness-gen
 
-install:
-	cp icc-brightness-gen ${BIN_PATH}
-	cp icc-brightness ${BIN_PATH}
-	cp icc-brightness.desktop ${AUTO_START_PATH}
+install: all
+	mkdir -p $(DESTDIR)$(BIN_PATH)
+	install -m 755 icc-brightness-gen $(DESTDIR)$(BIN_PATH)
+	install -m 755 icc-brightness $(DESTDIR)$(BIN_PATH)
+	mkdir -p $(DESTDIR)$(AUTO_START_PATH)
+	install -m 644 icc-brightness.desktop $(DESTDIR)$(AUTO_START_PATH)
