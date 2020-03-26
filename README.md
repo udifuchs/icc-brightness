@@ -21,9 +21,9 @@ Lenovo ThinkPad X1 Yoga OLED display.
 
 The build requires the liblcms2 development package:
 ```
-$ sudo apt install liblcms2-dev 
+$ sudo apt install liblcms2-dev
 Reading package lists... Done
-Building dependency tree       
+Building dependency tree
 Reading state information... Done
 The following NEW packages will be installed:
   liblcms2-dev
@@ -36,7 +36,7 @@ $ make
 gcc -W -Wall icc-brightness-gen.c -l lcms2 -o icc-brightness-gen
 $ ./icc-brightness
 Control OLED display brightness by applying ICC color profiles.
-  
+
 icc-brightness brightness max-brightness - set brightness manually
 icc-brightness apply - apply brightness from system setting
 icc-brightness watch - continuously update to system setting
@@ -54,3 +54,29 @@ cp icc-brightness.desktop /usr/share/gnome/autostart/
 The daemon will start on your next login.
 You can change brightness using the brightness key or any other method
 that controls the display "backlight".
+
+To remove this global installation:
+```
+$ sudo make uninstall
+rm -f /usr/local/bin/icc-brightness-gen
+rm -f /usr/local/bin/icc-brightness
+rm -f /usr/share/gnome/autostart/icc-brightness.desktop
+```
+
+If you prefer to install this daemon as a local user:
+```
+$ make local-install
+mkdir -p ~/.local/bin/
+install -m 755 icc-brightness-gen ~/.local/bin/
+install -m 755 icc-brightness ~/.local/bin/
+mkdir -p ~/.config/autostart/
+install -m 644 icc-brightness.desktop ~/.config/autostart/
+```
+
+And you can remove this local installation with:
+```
+$ make local-uninstall
+rm -f ~/.local/bin/icc-brightness-gen
+rm -f ~/.local/bin/icc-brightness
+rm -f ~/.config/autostart/icc-brightness.desktop
+```
