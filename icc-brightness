@@ -66,9 +66,16 @@ def find_profile(filename):
 
 
 def get_device_id():
-    out = subprocess.check_output(['colormgr', 'get-devices-by-kind',
-                                   'display'])
-    return get_object_path(out)
+    device_id = None
+    out = subprocess.check_output(['colormgr', 'get-devices-by-kind', 'display'])
+    for line in out.decode('utf8').split('\n'):
+        if line.startswith('Object Path:'):
+            device_id = line.split(':')[1].lstrip()
+        elif line.startswith('Embedded:'):
+            embedded = line.split(':')[1].lstrip()
+            if embedded == "Yes":
+                break
+    return device_id
 
 
 last_icc_filename = None
