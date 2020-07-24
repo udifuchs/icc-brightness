@@ -1,7 +1,7 @@
 # Copyright 2017 - 2019, Udi Fuchs
 # SPDX-License-Identifier: MIT
 
-CFLAGS := -Wall ${CFLAGS}
+CFLAGS := -W -Wall -O2 ${CFLAGS}
 LDFLAGS := -l lcms2 ${LDFLAGS}
 
 PREFIX ?= /usr/local
@@ -11,6 +11,7 @@ AUTO_START_DIR=/etc/xdg/autostart
 all: icc-brightness-gen
 
 icc-brightness-gen: icc-brightness-gen.c
+	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 clean:
 	rm -f icc-brightness-gen
