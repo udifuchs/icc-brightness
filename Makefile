@@ -18,3 +18,17 @@ clean:
 install: all
 	install -Dm755 -t $(DESTDIR)$(BINDIR) icc-brightness icc-brightness-gen
 	install -Dm644 -t $(DESTDIR)$(AUTO_START_DIR) icc-brightness.desktop
+
+uninstall:
+	rm -f $(DESTDIR)$(BIN_PATH)icc-brightness-gen
+	rm -f $(DESTDIR)$(BIN_PATH)icc-brightness
+	rm -f $(DESTDIR)$(AUTO_START_PATH)icc-brightness.desktop
+
+local-install: BIN_PATH=~/.local/bin/
+local-install: AUTO_START_PATH=~/.config/autostart/
+local-install: install
+
+local-uninstall: BIN_PATH=~/.local/bin/
+local-uninstall: AUTO_START_PATH=~/.config/autostart/
+local-uninstall: uninstall
+
