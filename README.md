@@ -21,9 +21,9 @@ Lenovo ThinkPad X1 Yoga OLED display.
 
 The build requires the liblcms2 development package:
 ```
-$ sudo apt install liblcms2-dev 
+$ sudo apt install liblcms2-dev
 Reading package lists... Done
-Building dependency tree       
+Building dependency tree
 Reading state information... Done
 The following NEW packages will be installed:
   liblcms2-dev
@@ -36,7 +36,7 @@ $ make
 gcc -W -Wall icc-brightness-gen.c -l lcms2 -o icc-brightness-gen
 $ ./icc-brightness
 Control OLED display brightness by applying ICC color profiles.
-  
+
 icc-brightness brightness max-brightness - set brightness manually
 icc-brightness apply - apply brightness from system setting
 icc-brightness watch - continuously update to system setting
@@ -54,3 +54,26 @@ cp icc-brightness.desktop /usr/share/gnome/autostart/
 The daemon will start on your next login.
 You can change brightness using the brightness key or any other method
 that controls the display "backlight".
+
+## Multiple Displays
+
+If you like to use an external monitor in addition to your laptop display, you may find your brightness keys changing the brightness of your monitor instead of your laptop.
+A workaround is to explicitly set the device that you want `icc-brightness` to
+target.
+
+First get a list of device models that `icc_brightness` can see:
+
+```
+$ ./icc-brightness list
+XPS 15 7590
+LG Ultra HD
+```
+
+Next modify the commands you use to specify the device model you want to operate
+on:
+
+```
+$ ./icc-brightness --target XPS apply
+```
+
+Note, you only need to specify a unique prefix for the `--target` argument.
