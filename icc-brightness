@@ -68,20 +68,24 @@ def get_object_path(out):
 
     # If there is more than one device being managed, there will be multiple data blocks
     # separated by blank lines. In each block the 'Object Path' line will always occur
-    # before the 'Model' line, so we repeatedly set the object_path and only break when
-    # we find a matching model_name. If we are not targeting a specific device, we just
-    # pick the first one we find.
+    # before the 'Model' or 'Embeded' line, so we repeatedly set the object_path and
+    # only break when we find an appropriate match. If we are not targeting a specific
+    # device, we just pick the first embedded device we find.
 
     object_path = None
     for line in out.decode('utf8').split('\n'):
         if line.startswith('Object Path:'):
             object_path = line.split(':')[1].lstrip()
-            if target_device is None:
-                break
-        elif target_device is not None and line.startswith('Model:'):
-            model_name = line.split(':')[1].lstrip()
-            if model_name.startswith(target_device):
-                break
+        elif target_device is None:
+            if line.startswith('Embedded:'):
+                embedded = line.split(':')[1].lstrip()
+                if embedded == "Yes":
+                    break
+        else:
+            if line.startswith('Model:'):
+                model_name = line.split(':')[1].lstrip()
+                if model_name.startswith(target_device):
+                    break
     return object_path
 
 
