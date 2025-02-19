@@ -157,7 +157,7 @@ def main():
         fcntl.fcntl(fd, fcntl.F_NOTIFY, fcntl.DN_MODIFY| fcntl.DN_MULTISHOT)
 
         while True:
-            time.sleep(1000000)
+            signal.pause()
 
     elif len(sys.argv) == 3:
         brightness = int(sys.argv[1])
