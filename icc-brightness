@@ -82,7 +82,20 @@ def icc_brightness(brightness, max_brightness):
         icc_filepath = os.path.join(TEMP_FOLDER, icc_filename)
         subprocess.run([ICC_BRIGHTNESS_GEN, icc_filepath,
                         str(brightness), str(max_brightness)], check=True)
-        subprocess.check_output(['colormgr', 'import-profile', icc_filepath], env={'LANG':'C'})
+
+        # Without timeout=1 import-profile randomly freezes for longer with the message:
+        # ERROR: b'The profile was not added in time\n'
+        try:
+            subprocess.run(
+                ['colormgr', 'import-profile', icc_filepath],
+                env={'LANG':'C'},
+                stdout=subprocess.PIPE,
+                check=True,
+                timeout=1,
+            )
+        except subprocess.TimeoutExpired as ex:
+            logging.warning(str(ex))
+            return
         object_path = find_profile(icc_filename)
         try:
             subprocess.run(['colormgr', 'device-add-profile',
