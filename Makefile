@@ -1,25 +1,26 @@
 # Copyright 2017 - 2019, Udi Fuchs
 # SPDX-License-Identifier: MIT
 
-BIN_PATH=/usr/local/bin/
-AUTO_START_PATH=/usr/share/gnome/autostart/
+CFLAGS := -Wall ${CFLAGS}
+LDFLAGS := -l lcms2 ${LDFLAGS}
+
+PREFIX ?= /usr/local
+BINDIR ?= ${PREFIX}/bin
+AUTO_START_DIR=/etc/xdg/autostart
 
 all: icc-brightness-gen
 
 icc-brightness-gen: icc-brightness-gen.c
-	$(CC) -W -Wall $(CFLAGS) $^ -l lcms2 $(LDFLAGS) -o $@
+	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 clean:
 	rm -f icc-brightness-gen
 
 install: all
-	mkdir -p $(DESTDIR)$(BIN_PATH)
-	install -m 755 icc-brightness-gen $(DESTDIR)$(BIN_PATH)
-	install -m 755 icc-brightness $(DESTDIR)$(BIN_PATH)
-	mkdir -p $(DESTDIR)$(AUTO_START_PATH)
-	install -m 644 icc-brightness.desktop $(DESTDIR)$(AUTO_START_PATH)
+	install -Dm755 -t $(DESTDIR)$(BINDIR) icc-brightness icc-brightness-gen
+	install -Dm644 -t $(DESTDIR)$(AUTO_START_DIR) icc-brightness.desktop
 
 uninstall:
-	rm -f $(DESTDIR)$(BIN_PATH)icc-brightness-gen
-	rm -f $(DESTDIR)$(BIN_PATH)icc-brightness
-	rm -f $(DESTDIR)$(AUTO_START_PATH)icc-brightness.desktop
+	rm -f $(DESTDIR)$(BINDIR)/icc-brightness-gen
+	rm -f $(DESTDIR)$(BINDIR)/icc-brightness
+	rm -f $(DESTDIR)$(AUTO_START_DIR)/icc-brightness.desktop
