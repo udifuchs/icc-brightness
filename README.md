@@ -14,7 +14,8 @@ This tool can be used on an LCD display, but in that case you really want
 to control the brightness directly using the display backlight.
 
 Specifically icc-brightness was developed for the
-Lenovo ThinkPad X1 Yoga OLED display.
+Lenovo ThinkPad X1 Yoga OLED display. It is also known to work on the 
+Framework 13, with Wayland.
 
 
 ## Build and install
