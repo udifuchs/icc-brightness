@@ -5,8 +5,8 @@
 
 ## Introduction
 
-This tool is a work-around for displays whose brightness contol is not
-supported by the linux kernel. It preforms well on OLED displays,
+This tool is a work-around for displays whose brightness control is not
+supported by the linux kernel. It performs well on OLED displays,
 since these have very dark black point and their power consumption is
 relative to the brightness of the viewed content.
 
