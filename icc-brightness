@@ -19,14 +19,24 @@ import threading
 import logging
 
 TEMP_FOLDER = '/tmp'
-BACKLIGHT_PATH = '/sys/class/backlight/intel_backlight'
-BRIGHTNESS_PATH = os.path.join(BACKLIGHT_PATH, 'brightness')
-MAX_BRIGHTNESS_PATH = os.path.join(BACKLIGHT_PATH, 'max_brightness')
 
 CWD = os.path.dirname(__file__)
 ICC_BRIGHTNESS_GEN = os.path.join(CWD, 'icc-brightness-gen')
 
 LOCK = threading.Lock()
+
+
+def get_backlight_path():
+    """Detect the backlight path, trying intel_backlight and nvidia_0."""
+    backlight_options = ['intel_backlight', 'nvidia_0']
+    for backlight in backlight_options:
+        backlight_path = os.path.join('/sys/class/backlight', backlight)
+        brightness_path = os.path.join(backlight_path, 'brightness')
+        if os.path.exists(brightness_path):
+            return backlight_path
+    raise FileNotFoundError(
+        'No supported backlight found. Tried: ' + ', '.join(backlight_options)
+    )
 
 
 def clean():
@@ -125,9 +135,12 @@ def icc_brightness(brightness, max_brightness):
 
 
 def icc_brightness_apply():
-    with open(BRIGHTNESS_PATH) as infile:
+    backlight_path = get_backlight_path()
+    brightness_path = os.path.join(backlight_path, 'brightness')
+    max_brightness_path = os.path.join(backlight_path, 'max_brightness')
+    with open(brightness_path) as infile:
         brightness = int(infile.readline())
-    with open(MAX_BRIGHTNESS_PATH) as infile:
+    with open(max_brightness_path) as infile:
         max_brightness = int(infile.readline())
     icc_brightness(brightness, max_brightness)
 
@@ -161,7 +174,8 @@ def main():
         except BaseException:
             logging.exception('device-make-profile-default')
         signal.signal(signal.SIGIO, handler)
-        fd = os.open(BACKLIGHT_PATH, os.O_RDONLY)
+        backlight_path = get_backlight_path()
+        fd = os.open(backlight_path, os.O_RDONLY)
         fcntl.fcntl(fd, fcntl.F_SETSIG, 0)
         fcntl.fcntl(fd, fcntl.F_NOTIFY, fcntl.DN_MODIFY| fcntl.DN_MULTISHOT)
 
