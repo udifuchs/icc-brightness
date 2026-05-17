@@ -17,6 +17,8 @@ import fcntl
 import signal
 import threading
 import logging
+from ctypes import cdll, c_void_p, c_uint32, c_char_p, c_double, c_int, Array
+from typing import cast
 
 TEMP_FOLDER = '/tmp'
 BACKLIGHT_PATH = '/sys/class/backlight/intel_backlight'
@@ -27,6 +29,116 @@ CWD = os.path.dirname(__file__)
 ICC_BRIGHTNESS_GEN = os.path.join(CWD, 'icc-brightness-gen')
 
 LOCK = threading.Lock()
+
+LCMS2 = cdll.LoadLibrary('liblcms2.so')
+
+
+cmsSigProfileDescriptionTag = 0x64657363
+cmsSigVcgtTag = 0x76636774
+
+
+LCMS2.cmsCreate_sRGBProfile.argtypes = []
+LCMS2.cmsCreate_sRGBProfile.restype = c_void_p
+
+def cmsCreate_sRGBProfile() -> c_void_p:
+    return LCMS2.cmsCreate_sRGBProfile()
+
+
+LCMS2.cmsMLUalloc.argtypes = [c_void_p, c_uint32]
+LCMS2.cmsMLUalloc.restype = c_void_p
+
+def cmsMLUalloc(context_id: c_void_p | None, n_items: int) -> c_void_p:
+    return LCMS2.cmsMLUalloc(context_id, c_uint32(n_items))
+
+
+LCMS2.cmsMLUfree.argtypes = [c_void_p]
+LCMS2.cmsMLUfree.restype = None
+
+def cmsMLUfree(mlu: c_void_p) -> None:
+    LCMS2.cmsMLUfree(mlu)
+
+
+LCMS2.cmsMLUsetASCII.argtypes = [c_void_p, c_char_p, c_char_p, c_char_p]
+LCMS2.cmsMLUsetASCII.restype = c_int
+
+def cmsMLUsetASCII(mlu: c_void_p, language_code: str, country_code: str, ascii_string: str) -> bool:
+    r = LCMS2.cmsMLUsetASCII(
+        mlu,
+        c_char_p(language_code.encode("ascii")),
+        c_char_p(country_code.encode("ascii")),
+        c_char_p(ascii_string.encode("ascii"))
+    )
+    return r == 1
+
+
+LCMS2.cmsWriteTag.argtypes = [c_void_p, c_int, c_void_p]
+LCMS2.cmsWriteTag.restype = c_int
+
+def cmsWriteTag(hProfile: c_void_p, sig: int, data: c_void_p | Array) ->bool:
+    r =  LCMS2.cmsWriteTag(hProfile, c_int(sig), data)
+    return r == 1
+
+
+LCMS2.cmsCreateContext.argtypes = [c_void_p, c_void_p]
+LCMS2.cmsCreateContext.restype = c_void_p
+
+def cmsCreateContext(
+        plugin: c_void_p | None, user_data: c_void_p | None) -> c_void_p:
+    return LCMS2.cmsCreateContext(plugin, user_data)
+
+
+LCMS2.cmsBuildParametricToneCurve.argtypes = [c_void_p, c_int, c_double * 3]
+LCMS2.cmsBuildParametricToneCurve.restype = c_void_p
+
+def cmsBuildParametricToneCurve(context_id: c_void_p, curve_type: int, params: tuple[float, float, float]) -> c_void_p:
+    return LCMS2.cmsBuildParametricToneCurve(context_id, c_int(curve_type), (c_double * 3)(*params))
+
+
+LCMS2.cmsFreeToneCurve.argtypes = [c_void_p]
+LCMS2.cmsFreeToneCurve.restype = None
+
+def cmsFreeToneCurve(ToneCurve: c_void_p) -> None:
+    LCMS2.cmsFreeToneCurve(ToneCurve)
+
+
+LCMS2.cmsSaveProfileToFile.argtypes = [c_void_p, c_char_p]
+LCMS2.cmsSaveProfileToFile.restype = c_int
+
+def cmsSaveProfileToFile(hProfile: c_void_p, filename: str) -> bool:
+    r = LCMS2.cmsSaveProfileToFile(hProfile, c_char_p(filename.encode("ascii")))
+    return r == 1
+
+
+def create_srgb_profile(brightness: float) -> c_void_p:
+
+    hsRGB = cmsCreate_sRGBProfile()
+
+    mlu = cmsMLUalloc(None, 1)
+    cmsMLUsetASCII(mlu, "en", "US", f"Brightness {brightness:.2f}")
+    cmsWriteTag(hsRGB, cmsSigProfileDescriptionTag, mlu)
+    cmsMLUfree(mlu);
+
+    context_id = cmsCreateContext(None, None)
+    curve = (1.0, brightness, 0.0)
+    tone_curve = (c_void_p * 3)(
+	    cmsBuildParametricToneCurve(context_id, 2, curve),
+	    cmsBuildParametricToneCurve(context_id, 2, curve),
+	    cmsBuildParametricToneCurve(context_id, 2, curve),
+    )
+    cmsWriteTag(hsRGB, cmsSigVcgtTag, tone_curve)
+    cmsFreeToneCurve(cast(c_void_p, tone_curve[0]))
+    cmsFreeToneCurve(cast(c_void_p, tone_curve[1]))
+    cmsFreeToneCurve(cast(c_void_p, tone_curve[2]))
+
+    return hsRGB;
+
+
+def generate_profile(filename: str, brightness: int, max_brightness: int) -> None:
+    ratio = brightness / max_brightness
+    hs_rgb = create_srgb_profile(ratio)
+    r = cmsSaveProfileToFile(hs_rgb, filename)
+    if r != 1:
+        raise Exception(f"Failed to save profile to file {filename}")
 
 
 def clean():
@@ -91,8 +203,7 @@ def icc_brightness(brightness, max_brightness):
     object_path = find_profile(icc_filename)
     if object_path is None:
         icc_filepath = os.path.join(TEMP_FOLDER, icc_filename)
-        subprocess.run([ICC_BRIGHTNESS_GEN, icc_filepath,
-                        str(brightness), str(max_brightness)], check=True)
+        generate_profile(icc_filepath, brightness, max_brightness)
 
         # Without timeout=1 import-profile randomly freezes for longer with the message:
         # ERROR: b'The profile was not added in time\n'
