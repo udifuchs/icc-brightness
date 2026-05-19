@@ -30,7 +30,7 @@ ICC_BRIGHTNESS_GEN = os.path.join(CWD, 'icc-brightness-gen')
 
 LOCK = threading.Lock()
 
-LCMS2 = cdll.LoadLibrary('liblcms2.so')
+LCMS2 = cdll.LoadLibrary('liblcms2.so.2')
 
 
 cmsSigProfileDescriptionTag = 0x64657363
