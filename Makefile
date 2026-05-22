@@ -6,6 +6,7 @@ BINDIR ?= ${PREFIX}/bin
 AUTO_START_DIR=/etc/xdg/autostart
 
 install:
+	install -Dm755 -t $(DESTDIR)$(BINDIR) icc-brightness
 	install -Dm644 -t $(DESTDIR)$(AUTO_START_DIR) icc-brightness.desktop
 
 uninstall:
